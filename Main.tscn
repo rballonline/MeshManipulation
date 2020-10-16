@@ -1,0 +1,55 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://Scripts/Main.gd" type="Script" id=1]
+
+[sub_resource type="SpatialMaterial" id=1]
+albedo_color = Color( 0.0627451, 0.8, 0.25098, 1 )
+
+[sub_resource type="CubeMesh" id=2]
+material = SubResource( 1 )
+
+[sub_resource type="BoxShape" id=5]
+
+[sub_resource type="SpatialMaterial" id=3]
+albedo_color = Color( 0.592157, 0.905882, 0.0862745, 1 )
+
+[sub_resource type="CubeMesh" id=4]
+material = SubResource( 3 )
+
+[node name="Main" type="Spatial"]
+transform = Transform( 1, 0, 0, 0, 0.99977, 0.021431, 0, -0.021431, 0.99977, 0, 0, 0 )
+script = ExtResource( 1 )
+show_wireframe = false
+show_axes = false
+show_face_normals = false
+
+[node name="Meshes" type="Node" parent="."]
+
+[node name="Cube" type="MeshInstance" parent="Meshes"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.07597, 0 )
+mesh = SubResource( 2 )
+material/0 = null
+
+[node name="StaticBody" type="StaticBody" parent="Meshes/Cube"]
+
+[node name="CollisionShape" type="CollisionShape" parent="Meshes/Cube/StaticBody"]
+shape = SubResource( 5 )
+
+[node name="Floor" type="MeshInstance" parent="Meshes"]
+transform = Transform( 6.88346, 0, 0, 0, 0.0447118, 0, 0, 0, 7.16078, 0, 0, 0 )
+mesh = SubResource( 4 )
+material/0 = null
+
+[node name="Lights" type="Node" parent="."]
+
+[node name="DirectionalLight" type="DirectionalLight" parent="Lights"]
+transform = Transform( 1, 0, 0, 0, 0.778528, 0.62761, 0, -0.62761, 0.778528, 0, 3.77816, 3.77808 )
+
+[node name="CameraAnchor" type="Spatial" parent="."]
+transform = Transform( 0.391454, -0.0197208, 0.919986, 0.0197208, 0.999721, 0.0130388, -0.919987, 0.0130388, 0.391734, 0, 0, 0 )
+
+[node name="Camera" type="Camera" parent="CameraAnchor"]
+transform = Transform( 0.871787, -0.177322, 0.456666, -9.31323e-10, 0.932191, 0.361967, -0.489885, -0.315558, 0.812672, 2.14561, 3.89777, 4.89912 )
+[connection signal="input_event" from="Meshes/Cube/StaticBody" to="." method="_on_StaticBody_input_event"]
+[connection signal="mouse_entered" from="Meshes/Cube/StaticBody" to="." method="_on_StaticBody_mouse_entered"]
+[connection signal="mouse_exited" from="Meshes/Cube/StaticBody" to="." method="_on_StaticBody_mouse_exited"]

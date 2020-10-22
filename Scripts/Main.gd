@@ -61,6 +61,8 @@ func _ready():
 	if show_face_normals:
 		drawSurfaceNormals()
 
+	drawSelectedOutline(1)
+
 func createAndAssignCubeMesh():
 	var uniqueCubeVertices = [
 		Vector3(-0.5,0.5,0.5),
@@ -74,37 +76,20 @@ func createAndAssignCubeMesh():
 		Vector3(-0.5,-0.5,-0.5),
 	]
 
-	var front_face = [
-		uniqueCubeVertices[0], uniqueCubeVertices[1], uniqueCubeVertices[2],
-		uniqueCubeVertices[0], uniqueCubeVertices[2], uniqueCubeVertices[3]
-	]
-
-	var back_face = [
-		uniqueCubeVertices[4], uniqueCubeVertices[6], uniqueCubeVertices[5],
-		uniqueCubeVertices[4], uniqueCubeVertices[7], uniqueCubeVertices[6]
-	]
-
-	var left_face = [
-		uniqueCubeVertices[0], uniqueCubeVertices[7], uniqueCubeVertices[4],
-		uniqueCubeVertices[0], uniqueCubeVertices[3], uniqueCubeVertices[7]
-	]
-
-	var right_face = [
-		uniqueCubeVertices[1], uniqueCubeVertices[5], uniqueCubeVertices[6],
-		uniqueCubeVertices[1], uniqueCubeVertices[6], uniqueCubeVertices[2]
-	]
-
-	var top_face = [
-		uniqueCubeVertices[0], uniqueCubeVertices[4], uniqueCubeVertices[1],
-		uniqueCubeVertices[4], uniqueCubeVertices[5], uniqueCubeVertices[1]
-	]
-
-	var bottom_face = [
-		uniqueCubeVertices[7], uniqueCubeVertices[3], uniqueCubeVertices[2],
+	var cube_faces = [
+		uniqueCubeVertices[0], uniqueCubeVertices[1], uniqueCubeVertices[2], # top
+		uniqueCubeVertices[0], uniqueCubeVertices[2], uniqueCubeVertices[3],
+		uniqueCubeVertices[4], uniqueCubeVertices[6], uniqueCubeVertices[5], # back
+		uniqueCubeVertices[4], uniqueCubeVertices[7], uniqueCubeVertices[6],
+		uniqueCubeVertices[0], uniqueCubeVertices[7], uniqueCubeVertices[4], # left
+		uniqueCubeVertices[0], uniqueCubeVertices[3], uniqueCubeVertices[7],
+		uniqueCubeVertices[1], uniqueCubeVertices[5], uniqueCubeVertices[6], # right
+		uniqueCubeVertices[1], uniqueCubeVertices[6], uniqueCubeVertices[2],
+		uniqueCubeVertices[0], uniqueCubeVertices[4], uniqueCubeVertices[1], # top
+		uniqueCubeVertices[4], uniqueCubeVertices[5], uniqueCubeVertices[1],
+		uniqueCubeVertices[7], uniqueCubeVertices[3], uniqueCubeVertices[2], # bottom
 		uniqueCubeVertices[6], uniqueCubeVertices[7], uniqueCubeVertices[2]
 	]
-	
-	var cube_faces = front_face + back_face + left_face + right_face + top_face + bottom_face
 
 	var sTool = SurfaceTool.new()
 	sTool.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -122,6 +107,7 @@ func createAndAssignCubeMesh():
 	
 	cube.create_convex_collision()
 	var cubesStaticBody = cube.get_child(0)
+	cubesStaticBody.name = "CubeStaticBody"
 	cubesStaticBody.connect("input_event", get_node("/root/Main"), "_on_StaticBody_input_event")
 	cubesStaticBody.connect("mouse_exited", get_node("/root/Main"), "_on_StaticBody_mouse_exited")
 	cubesStaticBody.connect("mouse_entered", get_node("/root/Main"), "_on_StaticBody_mouse_entered")
@@ -140,6 +126,7 @@ func drawSurfaceNormals():
 	meshDataTool.create_from_surface(arrayMesh, 0)
 	
 	var ig = ImmediateGeometry.new()
+	ig.name = "SurfaceNormals_ImmediateGeometry"
 	var sm = SpatialMaterial.new()
 	sm.flags_unshaded = true
 	sm.vertex_color_use_as_albedo = true
@@ -165,6 +152,7 @@ func drawSurfaceNormals():
 
 func drawAxes():
 	var axisGeom = ImmediateGeometry.new()
+	axisGeom.name = "AxisGeom"
 	var axisMaterial = SpatialMaterial.new()
 	var axisLength = 10
 	axisMaterial.flags_unshaded = true
@@ -186,6 +174,33 @@ func drawAxes():
 	axisGeom.end()
 	add_child(axisGeom)
 
+func drawSelectedOutline(selectedFace):
+	var cubeMeshInstance = get_node("Meshes/Cube")
+	var cubeMesh = cubeMeshInstance.get_mesh()
+	
+	var ig = ImmediateGeometry.new()
+	var sm = SpatialMaterial.new()
+	sm.flags_unshaded = true
+	sm.vertex_color_use_as_albedo = true
+	ig.material_override = sm
+	ig.name = "DrawSelectedOutline_ImmediateGeometry"
+
+	ig.begin(Mesh.PRIMITIVE_TRIANGLES)
+	ig.set_color(Color.purple)
+	
+	cubeMesh.create_outline(1.0)
+	var vertices = cubeMesh.get_faces()
+	
+	var startVertex = selectedFace * 3
+	ig.add_vertex(vertices[startVertex])
+	ig.add_vertex(vertices[startVertex + 1])
+	ig.add_vertex(vertices[startVertex + 2])
+	
+	ig.end()
+	var sf = 1.005
+	ig.set_scale(Vector3(sf, sf, sf))
+	cubeMeshInstance.add_child(ig)
+
 func drawWireframe():
 	var cubeMeshInstance = get_node("Meshes/Cube")
 	var cubeMesh = cubeMeshInstance.get_mesh()
@@ -195,6 +210,7 @@ func drawWireframe():
 	sm.flags_unshaded = true
 	sm.vertex_color_use_as_albedo = true
 	ig.material_override = sm
+	ig.name = "Wireframe_ImmediateGeometry"
 
 	ig.begin(Mesh.PRIMITIVE_LINES)
 	ig.set_color(Color.yellow)

@@ -28,6 +28,9 @@ material/0 = null
 [node name="DirectionalLight" type="DirectionalLight" parent="Lights"]
 transform = Transform( 1, 0, 0, 0, 0.778528, 0.62761, 0, -0.62761, 0.778528, 0, 3.77816, 3.77808 )
 
+[node name="DirectionalLight2" type="DirectionalLight" parent="Lights"]
+transform = Transform( 1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, -6, 0 )
+
 [node name="CameraGimbal" type="Spatial" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
 

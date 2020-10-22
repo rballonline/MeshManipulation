@@ -3,11 +3,15 @@ extends Spatial
 var is_rotate_enabled = false
 var is_zoom_enabled = false
 var input_start_position = Vector2()
-var camera_anchor
+var camera_gimble
+var inner_gimbal
 var rotation_speed = 0.2
 var zoom_step = 0.002
 var camera
 var zoom_min = 3
+export var invert_x = false
+export var invert_y = false
+export var mouse_sensitivity = 0.005
 
 export var show_wireframe = true
 export var show_axes = true
@@ -29,30 +33,99 @@ func _input(event):
 	if event.is_action_pressed("ui_exit"):
 		get_tree().quit()
 
-	if event is InputEventMouse:
-		var delta = input_start_position - event.get_position()
+	if event is InputEventMouseMotion:
 		if is_rotate_enabled:
-			print("Delta x:", delta.x, " y: ", delta.y)
-			camera_anchor.rotate_y(deg2rad(delta.x) * rotation_speed)
-			#camera_anchor.rotate_z(deg2rad(delta.y) * rotation_speed) # Hmm
-			input_start_position = event.get_position()
+			if event.relative.x != 0:
+				var dir = 1 if invert_x else -1
+				camera_gimble.rotate_object_local(Vector3.UP, dir * event.relative.x * mouse_sensitivity)
+			if event.relative.y != 0:
+				var dir = 1 if invert_y else -1
+				inner_gimbal.rotate_object_local(Vector3.RIGHT, dir * event.relative.y * mouse_sensitivity)
 		elif is_zoom_enabled:
-			var camera_to_anchor = camera_anchor.get_global_transform().origin - camera.get_global_transform().origin
+			var camera_to_anchor = camera_gimble.get_global_transform().origin - camera.get_global_transform().origin
 			var length = camera_to_anchor.length()
-			if(length > zoom_min):
-				camera.global_translate((delta.y * zoom_step) * camera_to_anchor)
-			input_start_position = event.get_position()
+			if length > zoom_min or event.relative.y < 0:
+				camera.global_translate((event.relative.y * zoom_step) * camera_to_anchor)
 
 func _ready():
-	camera_anchor = get_node("CameraAnchor")
-	camera = get_node("CameraAnchor/Camera")
-
+	camera_gimble = get_node("CameraGimbal")
+	inner_gimbal = get_node("CameraGimbal/InnerGimbal")
+	camera = get_node("CameraGimbal/InnerGimbal/Camera")
+	
+	createAndAssignCubeMesh()
+	
 	if show_wireframe:
 		drawWireframe()
 	if show_axes:
 		drawAxes()
 	if show_face_normals:
 		drawSurfaceNormals()
+
+func createAndAssignCubeMesh():
+	var uniqueCubeVertices = [
+		Vector3(-0.5,0.5,0.5),
+		Vector3(0.5,0.5,0.5),
+		Vector3(0.5,-0.5,0.5),
+		Vector3(-0.5,-0.5,0.5),
+
+		Vector3(-0.5,0.5,-0.5),
+		Vector3(0.5,0.5,-0.5),
+		Vector3(0.5,-0.5,-0.5),
+		Vector3(-0.5,-0.5,-0.5),
+	]
+
+	var front_face = [
+		uniqueCubeVertices[0], uniqueCubeVertices[1], uniqueCubeVertices[2],
+		uniqueCubeVertices[0], uniqueCubeVertices[2], uniqueCubeVertices[3]
+	]
+
+	var back_face = [
+		uniqueCubeVertices[4], uniqueCubeVertices[6], uniqueCubeVertices[5],
+		uniqueCubeVertices[4], uniqueCubeVertices[7], uniqueCubeVertices[6]
+	]
+
+	var left_face = [
+		uniqueCubeVertices[0], uniqueCubeVertices[7], uniqueCubeVertices[4],
+		uniqueCubeVertices[0], uniqueCubeVertices[3], uniqueCubeVertices[7]
+	]
+
+	var right_face = [
+		uniqueCubeVertices[1], uniqueCubeVertices[5], uniqueCubeVertices[6],
+		uniqueCubeVertices[1], uniqueCubeVertices[6], uniqueCubeVertices[2]
+	]
+
+	var top_face = [
+		uniqueCubeVertices[0], uniqueCubeVertices[4], uniqueCubeVertices[1],
+		uniqueCubeVertices[4], uniqueCubeVertices[5], uniqueCubeVertices[1]
+	]
+
+	var bottom_face = [
+		uniqueCubeVertices[7], uniqueCubeVertices[3], uniqueCubeVertices[2],
+		uniqueCubeVertices[6], uniqueCubeVertices[7], uniqueCubeVertices[2]
+	]
+	
+	var cube_faces = front_face + back_face + left_face + right_face + top_face + bottom_face
+
+	var sTool = SurfaceTool.new()
+	sTool.begin(Mesh.PRIMITIVE_TRIANGLES)
+
+	for x in cube_faces:
+		sTool.add_vertex(x)
+
+	sTool.generate_normals()
+	var cube = $Meshes/Cube
+	cube.mesh = sTool.commit()
+	
+	var material = SpatialMaterial.new()
+	material.albedo_color = Color("36c92a")
+	cube.material_override = material
+	
+	cube.create_convex_collision()
+	var cubesStaticBody = cube.get_child(0)
+	cubesStaticBody.connect("input_event", get_node("/root/Main"), "_on_StaticBody_input_event")
+	cubesStaticBody.connect("mouse_exited", get_node("/root/Main"), "_on_StaticBody_mouse_exited")
+	cubesStaticBody.connect("mouse_entered", get_node("/root/Main"), "_on_StaticBody_mouse_entered")
+	
 
 func drawSurfaceNormals():
 	var cubeMeshInstance = get_node("Meshes/Cube")
@@ -144,6 +217,12 @@ func drawWireframe():
 	var sf = 1.005
 	ig.set_scale(Vector3(sf, sf, sf))
 	cubeMeshInstance.add_child(ig)
+	
+static func rotate_vector3_around(var v3_pos,var v3_pivot,var y_angle): 
+		var dir = v3_pos - v3_pivot 
+		dir = Quat(Vector3(0,1,0),y_angle) * dir 
+		var point = dir - v3_pivot 
+		return point
 
 func _on_StaticBody_mouse_entered():
 	print("In cube")

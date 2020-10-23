@@ -181,7 +181,7 @@ func drawSelectedOutline(selectedFace):
 	var cubeMeshInstance = get_node("Meshes/Cube")
 	var cubeMesh = cubeMeshInstance.get_mesh()
 	
-	var ig = get_node("Meshes/Cube/DrawSelectedOutline_ImmediateGeometry") if get_node("Meshes/Cube/DrawSelectedOutline_ImmediateGeometry") else ImmediateGeometry.new()
+	var ig = get_node("Meshes/Cube/DrawSelectedOutline_ImmediateGeometry") if get_node_or_null("Meshes/Cube/DrawSelectedOutline_ImmediateGeometry") != null else ImmediateGeometry.new()
 	var sm = SpatialMaterial.new()
 	sm.flags_unshaded = true
 	sm.vertex_color_use_as_albedo = true
@@ -238,12 +238,6 @@ func drawWireframe():
 	ig.set_scale(Vector3(sf, sf, sf))
 	cubeMeshInstance.add_child(ig)
 	
-static func rotate_vector3_around(var v3_pos,var v3_pivot,var y_angle): 
-		var dir = v3_pos - v3_pivot 
-		dir = Quat(Vector3(0,1,0),y_angle) * dir 
-		var point = dir - v3_pivot 
-		return point
-
 func _on_StaticBody_mouse_entered():
 	print("In cube")
 
@@ -269,18 +263,19 @@ func get_hit_mesh_triangle_face_index(hitVector):
 	var meshDataTool = MeshDataTool.new()
 	meshDataTool.create_from_surface(arrayMesh, 0)
 	var camera_origin = camera.get_global_transform().origin
-	var purple_arrow = hitVector - camera_origin
+	var test_vector = hitVector - camera_origin
 	var i = 0
 	while i < vertices.size():
 		var face_index = i / 3
 		var a = cubeMeshInstance.to_global(vertices[i])
 		var b = cubeMeshInstance.to_global(vertices[i + 1])
 		var c = cubeMeshInstance.to_global(vertices[i + 2])
+		print("Triangle coords: ", a, b, c)
 
-		var intersects_triangle = Geometry.ray_intersects_triangle(camera_origin, purple_arrow, a, b, c)
+		var intersects_triangle = Geometry.ray_intersects_triangle(camera_origin, test_vector, a, b, c)
 
 		if intersects_triangle != null:
-			var angle = rad2deg(purple_arrow.angle_to(meshDataTool.get_face_normal(face_index)))
+			var angle = rad2deg(test_vector.angle_to(cubeMeshInstance.to_global(meshDataTool.get_face_normal(face_index))))
 			if angle > 90 and angle < 180:
 				return face_index
 

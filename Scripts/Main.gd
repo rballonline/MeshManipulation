@@ -253,3 +253,37 @@ func _on_StaticBody_mouse_exited():
 func _on_StaticBody_input_event(camera, event, click_position, click_normal, shape_idx):
 	if event.is_action_pressed("left_mouse"):
 		print("Pos ", click_position)
+		var face_index = get_hit_mesh_triangle_face_index(click_position)
+		if face_index > -1:
+			drawSelectedOutline(face_index)
+
+func get_hit_mesh_triangle_face_index(hitVector):
+	var cubeMeshInstance = get_node("Meshes/Cube")
+	var cubeMesh = cubeMeshInstance.get_mesh()
+	var vertices = cubeMesh.get_faces()
+	var arrayMesh = ArrayMesh.new()
+	var arrays = []
+	arrays.resize(ArrayMesh.ARRAY_MAX)
+	arrays[ArrayMesh.ARRAY_VERTEX] = vertices
+	arrayMesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var meshDataTool = MeshDataTool.new()
+	meshDataTool.create_from_surface(arrayMesh, 0)
+	var camera_origin = camera.get_global_transform().origin
+	var purple_arrow = hitVector - camera_origin
+	var i = 0
+	while i < vertices.size():
+		var face_index = i / 3
+		var a = cubeMeshInstance.to_global(vertices[i])
+		var b = cubeMeshInstance.to_global(vertices[i + 1])
+		var c = cubeMeshInstance.to_global(vertices[i + 2])
+
+		var intersects_triangle = Geometry.ray_intersects_triangle(camera_origin, purple_arrow, a, b, c)
+
+		if intersects_triangle != null:
+			var angle = rad2deg(purple_arrow.angle_to(meshDataTool.get_face_normal(face_index)))
+			if angle > 90 and angle < 180:
+				return face_index
+
+		i += 3
+
+	return -1

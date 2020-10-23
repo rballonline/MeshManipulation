@@ -1,9 +1,7 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://Scripts/Main.gd" type="Script" id=1]
 [ext_resource path="res://Scripts/Camera.gd" type="Script" id=2]
-
-[sub_resource type="CubeMesh" id=6]
 
 [sub_resource type="SpatialMaterial" id=4]
 albedo_color = Color( 0.592157, 0.905882, 0.0862745, 1 )
@@ -14,12 +12,13 @@ material = SubResource( 4 )
 [node name="Main" type="Spatial"]
 transform = Transform( 1, 0, 0, 0, 0.99977, 0.021431, 0, -0.021431, 0.99977, 0, 0, 0 )
 script = ExtResource( 1 )
+show_wireframe = false
+show_axes = false
+show_face_normals = false
 
 [node name="Meshes" type="Node" parent="."]
 
 [node name="Cube" type="MeshInstance" parent="Meshes"]
-mesh = SubResource( 6 )
-material/0 = null
 
 [node name="Floor" type="MeshInstance" parent="Meshes"]
 transform = Transform( 6.88346, 0, 0, 0, 0.0447118, 0, 0, 0, 7.16078, 0, 0, 0 )

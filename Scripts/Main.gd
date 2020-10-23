@@ -62,6 +62,9 @@ func _ready():
 		drawSurfaceNormals()
 
 	drawSelectedOutline(1)
+	drawSelectedOutline(0)
+	drawSelectedOutline(10)
+	drawSelectedOutline(11)
 
 func createAndAssignCubeMesh():
 	var uniqueCubeVertices = [
@@ -178,10 +181,11 @@ func drawSelectedOutline(selectedFace):
 	var cubeMeshInstance = get_node("Meshes/Cube")
 	var cubeMesh = cubeMeshInstance.get_mesh()
 	
-	var ig = ImmediateGeometry.new()
+	var ig = get_node("Meshes/Cube/DrawSelectedOutline_ImmediateGeometry") if get_node("Meshes/Cube/DrawSelectedOutline_ImmediateGeometry") else ImmediateGeometry.new()
 	var sm = SpatialMaterial.new()
 	sm.flags_unshaded = true
 	sm.vertex_color_use_as_albedo = true
+	ig.clear()
 	ig.material_override = sm
 	ig.name = "DrawSelectedOutline_ImmediateGeometry"
 
